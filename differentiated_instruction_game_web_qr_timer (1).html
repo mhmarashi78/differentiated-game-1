@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Differentiated Instruction Game – Web (QR + 30s Timer, 14 Questions)</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root { --bg:#f6f7fb; --card:#fff; --ink:#0f172a; --muted:#475569; }
+    body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--ink); }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+    .card { background: var(--card); border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,.06); padding: 16px; }
+    .title { font-weight:700; font-size: 1.5rem; margin-bottom: 8px; }
+    .pill { color:#fff; border-radius: 999px; padding: 4px 10px; font-size:12px; margin-right:4px; }
+    .p-content{background:#e11d48;} .p-process{background:#16a34a;} .p-product{background:#0284c7;} .p-env{background:#7c3aed;}
+    .btn { border:0; padding:10px 14px; border-radius:12px; background:#111827; color:#fff; font-weight:600; cursor:pointer; }
+    .btn-ghost { background:#e5e7eb; color:#111827; }
+    .grid2 { display:grid; grid-template-columns: 1fr; gap:10px; }
+    @media(min-width:720px){ .grid2{ grid-template-columns:1fr 1fr; } }
+    .timer { font-variant-numeric: tabular-nums; font-weight:700; }
+    .progress { height:6px; background:#e5e7eb; border-radius:999px; overflow:hidden; }
+    .progress>div { height:100%; background:#111827; transition:width .3s linear; }
+  </style>
+</head>
+<body>
+  <div id="app" class="wrap"></div>
+  <script>
+  const {useState,useEffect,useRef}=React;
+  const PILLARS=[{key:'content',label:'Content',cls:'p-content'},{key:'process',label:'Process',cls:'p-process'},{key:'product',label:'Product',cls:'p-product'},{key:'environment',label:'Learning Environment',cls:'p-env'}];
+  const QUESTIONS=[
+    {text:"Provide bilingual glossary for EAL learners",answer:'content'},
+    {text:"Group by readiness for discussion",answer:'process'},
+    {text:"Offer poster or video as project outcome",answer:'product'},
+    {text:"Quiet zone for anxiety support",answer:'environment'},
+    {text:"Tiered worksheets for same topic",answer:'process'},
+    {text:"Allow model or report as final work",answer:'product'},
+    {text:"Flexible seating and visual aids",answer:'environment'},
+    {text:"Simplified notes for some learners",answer:'content'},
+    {text:"Peer mentoring in practical task",answer:'process'},
+    {text:"Digital presentation instead of essay",answer:'product'},
+    {text:"Rearrange desks for collaboration",answer:'environment'},
+    {text:"Provide advanced reading for extension",answer:'content'},
+    {text:"Hands-on task vs. theoretical question",answer:'process'},
+    {text:"Use choice board for creative outputs",answer:'product'}
+  ];
+  function ProgressBar({pct}){return React.createElement('div',{className:'progress'},React.createElement('div',{style:{width:`${pct}%`}}));}
+  function useCountdown(s,deps,onEnd){const [t,setT]=useState(s);useEffect(()=>{setT(s);const id=setInterval(()=>{setT(v=>{if(v<=1){clearInterval(id);onEnd&&onEnd();return 0;}return v-1;});},1000);return()=>clearInterval(id);},deps);return{t,pct:Math.round(t/s*100)};}
+  function QRShare(){const [show,setShow]=useState(false);const ref=useRef(null);useEffect(()=>{if(show){ref.current.innerHTML='';new QRCode(ref.current,{text:location.href,width:160,height:160});}},[show]);return React.createElement('div',{},[
+    React.createElement('button',{className:'btn-ghost',onClick:()=>setShow(v=>!v)},show?'Hide QR':'Share (QR)'),
+    show&&React.createElement('div',{ref})
+  ]);}
+  function Game(){const [i,setI]=useState(0);const [score,setScore]=useState(0);const [lock,setLock]=useState(false);const q=QUESTIONS[i];const {t,pct}=useCountdown(30,[i],()=>{if(!lock){setLock(true);setTimeout(()=>next(),300);}});
+    function choose(k){if(lock)return;setLock(true);if(k===q.answer)setScore(s=>s+1);setTimeout(()=>next(),300);}function next(){setLock(false);setI(v=>v+1);}const done=i>=QUESTIONS.length;
+    return React.createElement('div',{className:'card'},[
+      React.createElement('div',{className:'title'},'Differentiated Instruction Game'),
+      React.createElement('p',{},`Question ${Math.min(i+1,QUESTIONS.length)} / ${QUESTIONS.length}`),
+      !done&&React.createElement('div',{},[
+        React.createElement('div',{className:'timer'},`${t}s`),
+        React.createElement(ProgressBar,{pct}),
+        React.createElement('p',{style:{fontWeight:600}},q.text),
+        React.createElement('div',{className:'grid2'},PILLARS.map(p=>React.createElement('button',{key:p.key,className:`btn ${p.cls}`,onClick:()=>choose(p.key),disabled:lock},p.label)))
+      ]),
+      done&&React.createElement('h3',{},`Score: ${score}/${QUESTIONS.length}`),
+      React.createElement('div',{style:{marginTop:10,display:'flex',justifyContent:'space-between',alignItems:'center'}},[
+        React.createElement('span',{},`Score: ${score}`),React.createElement(QRShare,null)
+      ])
+    ]);
+  }
+  ReactDOM.createRoot(document.getElementById('app')).render(React.createElement(Game));
+  </script>
+</body>
+</html>
